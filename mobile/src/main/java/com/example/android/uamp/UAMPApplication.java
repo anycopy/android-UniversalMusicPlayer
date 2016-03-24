@@ -20,6 +20,7 @@ import android.app.Application;
 import com.example.android.uamp.ui.FullScreenPlayerActivity;
 import com.google.android.libraries.cast.companionlibrary.cast.CastConfiguration;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
+import com.squareup.leakcanary.LeakCanary;
 
 /**
  * The {@link Application} for the uAmp application.
@@ -29,6 +30,7 @@ public class UAMPApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        LeakCanary.install(this);
         String applicationId = getResources().getString(R.string.cast_application_id);
         VideoCastManager.initialize(
                 getApplicationContext(),
