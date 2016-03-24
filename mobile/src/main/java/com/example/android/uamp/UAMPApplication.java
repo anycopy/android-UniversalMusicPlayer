@@ -15,7 +15,9 @@
  */
 package com.example.android.uamp;
 
+import android.annotation.TargetApi;
 import android.app.Application;
+import android.os.Build;
 
 import com.example.android.uamp.ui.FullScreenPlayerActivity;
 import com.google.android.libraries.cast.companionlibrary.cast.CastConfiguration;
@@ -30,6 +32,7 @@ public class UAMPApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        addressMemoryLeakIssue();
         LeakCanary.install(this);
         String applicationId = getResources().getString(R.string.cast_application_id);
         VideoCastManager.initialize(
@@ -40,5 +43,15 @@ public class UAMPApplication extends Application {
                         .enableDebug()
                         .setTargetActivity(FullScreenPlayerActivity.class)
                         .build());
+    }
+
+    /**
+     * issue summary : https://code.google.com/p/android/issues/detail?id=173789
+     * hack explanation : http://stackoverflow.com/a/17056643/4068957
+     */
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+    private void addressMemoryLeakIssue() {
+        getPackageManager().getUserBadgedLabel("", android.os.Process.myUserHandle());
+
     }
 }
