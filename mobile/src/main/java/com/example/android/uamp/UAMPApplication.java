@@ -19,6 +19,7 @@ import android.app.Application;
 
 import com.example.android.uamp.ui.FullScreenPlayerActivity;
 import com.google.android.libraries.cast.companionlibrary.cast.VideoCastManager;
+import com.squareup.leakcanary.LeakCanary;
 
 import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_DEBUGGING;
 import static com.google.android.libraries.cast.companionlibrary.cast.BaseCastManager.FEATURE_WIFI_RECONNECT;
@@ -31,9 +32,11 @@ public class UAMPApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        LeakCanary.install(this);
         String applicationId = getResources().getString(R.string.cast_application_id);
         VideoCastManager castManager = VideoCastManager.initialize(
                 getApplicationContext(), applicationId, FullScreenPlayerActivity.class, null);
         castManager.enableFeatures(FEATURE_WIFI_RECONNECT | FEATURE_DEBUGGING);
+        getPackageManager().getUserBadgedLabel("", android.os.Process.myUserHandle());
     }
 }

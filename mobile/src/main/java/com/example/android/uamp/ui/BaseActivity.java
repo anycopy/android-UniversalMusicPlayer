@@ -99,7 +99,7 @@ public abstract class BaseActivity extends ActionBarCastActivity implements Medi
 
     protected void showPlaybackControls() {
         LogHelper.d(TAG, "showPlaybackControls");
-        if (NetworkHelper.isOnline(this)) {
+        if (NetworkHelper.isOnline()) {
             getFragmentManager().beginTransaction()
                 .setCustomAnimations(
                     R.animator.slide_in_from_bottom, R.animator.slide_out_to_bottom,

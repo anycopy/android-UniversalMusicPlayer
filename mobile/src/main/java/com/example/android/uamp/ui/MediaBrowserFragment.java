@@ -17,15 +17,10 @@ package com.example.android.uamp.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.MediaMetadata;
 import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
 import android.media.session.PlaybackState;
-import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
@@ -64,24 +59,7 @@ public class MediaBrowserFragment extends Fragment {
     private MediaFragmentListener mMediaFragmentListener;
     private View mErrorView;
     private TextView mErrorMessage;
-    private final BroadcastReceiver mConnectivityChangeReceiver = new BroadcastReceiver() {
-        private boolean oldOnline = false;
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // We don't care about network changes while this fragment is not associated
-            // with a media ID (for example, while it is being initialized)
-            if (mMediaId != null) {
-                boolean isOnline = NetworkHelper.isOnline(context);
-                if (isOnline != oldOnline) {
-                    oldOnline = isOnline;
-                    checkForUserVisibleErrors(false);
-                    if (isOnline) {
-                        mBrowserAdapter.notifyDataSetChanged();
-                    }
-                }
-            }
-        }
-    };
+
 
     // Receive callbacks from the MediaController. Here we update our state such as which queue
     // is being shown, the current title and description and the PlaybackState.
@@ -152,7 +130,7 @@ public class MediaBrowserFragment extends Fragment {
 
         mBrowserAdapter = new BrowseAdapter(getActivity());
 
-        ListView listView = (ListView) rootView.findViewById(R.id.list_view);
+        ListView listView = (ListView) rootView.findViewById(R.id.recycler_view);
         listView.setAdapter(mBrowserAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -180,9 +158,7 @@ public class MediaBrowserFragment extends Fragment {
             onConnected();
         }
 
-        // Registers BroadcastReceiver to track network connection changes.
-        this.getActivity().registerReceiver(mConnectivityChangeReceiver,
-            new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
     }
 
     @Override
@@ -195,7 +171,6 @@ public class MediaBrowserFragment extends Fragment {
         if (getActivity().getMediaController() != null) {
             getActivity().getMediaController().unregisterCallback(mMediaControllerCallback);
         }
-        this.getActivity().unregisterReceiver(mConnectivityChangeReceiver);
     }
 
     @Override
@@ -253,17 +228,17 @@ public class MediaBrowserFragment extends Fragment {
     private void checkForUserVisibleErrors(boolean forceError) {
         boolean showError = forceError;
         // If offline, message is about the lack of connectivity:
-        if (!NetworkHelper.isOnline(getActivity())) {
+        if (!NetworkHelper.isOnline()) {
             mErrorMessage.setText(R.string.error_no_connection);
             showError = true;
         } else {
             // otherwise, if state is ERROR and metadata!=null, use playback state error message:
             MediaController controller = getActivity().getMediaController();
             if (controller != null
-                && controller.getMetadata() != null
-                && controller.getPlaybackState() != null
-                && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
-                && controller.getPlaybackState().getErrorMessage() != null) {
+                    && controller.getMetadata() != null
+                    && controller.getPlaybackState() != null
+                    && controller.getPlaybackState().getState() == PlaybackState.STATE_ERROR
+                    && controller.getPlaybackState().getErrorMessage() != null) {
                 mErrorMessage.setText(controller.getPlaybackState().getErrorMessage());
                 showError = true;
             } else if (forceError) {
@@ -274,8 +249,8 @@ public class MediaBrowserFragment extends Fragment {
         }
         mErrorView.setVisibility(showError ? View.VISIBLE : View.GONE);
         LogHelper.d(TAG, "checkForUserVisibleErrors. forceError=", forceError,
-            " showError=", showError,
-            " isOnline=", NetworkHelper.isOnline(getActivity()));
+                " showError=", showError,
+                " isOnline=", NetworkHelper.isOnline());
     }
 
     private void updateTitle() {
@@ -295,7 +270,7 @@ public class MediaBrowserFragment extends Fragment {
         if (parentId != null) {
             MediaBrowser mediaBrowser = mMediaFragmentListener.getMediaBrowser();
             LogHelper.d(TAG, "on updateTitle: mediaBrowser is ",
-                    mediaBrowser==null?"null":("not null, connected="+mediaBrowser.isConnected()));
+                    mediaBrowser == null ? "null" : ("not null, connected=" + mediaBrowser.isConnected()));
             if (mediaBrowser != null && mediaBrowser.isConnected()) {
                 // Unsubscribing is required to guarantee that we will get the initial values.
                 // Otherwise, if there is another callback subscribed to this mediaID, mediaBrowser
@@ -304,15 +279,15 @@ public class MediaBrowserFragment extends Fragment {
                 mediaBrowser.subscribe(parentId, new MediaBrowser.SubscriptionCallback() {
                     @Override
                     public void onChildrenLoaded(@NonNull String parentId,
-                             @NonNull List<MediaBrowser.MediaItem> children) {
+                                                 @NonNull List<MediaBrowser.MediaItem> children) {
                         LogHelper.d(TAG, "Got ", children.size(), " children for ", parentId,
-                            ". Looking for ", mMediaId);
-                        for (MediaBrowser.MediaItem item: children) {
+                                ". Looking for ", mMediaId);
+                        for (MediaBrowser.MediaItem item : children) {
                             LogHelper.d(TAG, "child ", item.getMediaId());
                             if (item.getMediaId().equals(mMediaId)) {
                                 if (mMediaFragmentListener != null) {
                                     mMediaFragmentListener.setToolbarTitle(
-                                        item.getDescription().getTitle());
+                                            item.getDescription().getTitle());
                                 }
                                 return;
                             }
